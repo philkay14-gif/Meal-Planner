@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#C2410C">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="description" content="Mobile-first Meal Planner, 141-Recipe Directory, Smart Shopping List with Samsung Galaxy S25 & Watch 6 Gemini Voice Sync, and 3-4 Week Freezer Rotation.">
+  <title>Meals, Shopping List &amp; Freezer — S25 &amp; Watch 6 Edition</title>
+  <link rel="manifest" href="./manifest.json">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+
+  <!-- Toast Notifications -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- Samsung Galaxy Watch 6 Dedicated Wrist UI (Toggleable via ⌚ Watch button or ?watch=1) -->
+  <div class="watch-container" id="watch-view">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:0 12px;">
+      <span style="font-size:0.75rem;color:#A1A1AA;font-weight:700;">⌚ GALAXY WATCH 6</span>
+      <button onclick="toggleWatchMode()" style="background:#27272A;color:#FFF;border:none;padding:4px 10px;border-radius:999px;font-size:0.72rem;cursor:pointer;">Exit Watch UI</button>
+    </div>
+    <button class="watch-mic-giant voice-mic-btn" onclick="triggerVoiceCapture('shop')" title="Tap & say 'Add [item] to my shopping list'">
+      🎙️
+    </button>
+    <div style="font-size:0.78rem;color:#D4D4D8;margin-bottom:10px;font-weight:600;">
+      Say <em>"Add milk and avocados to my shopping list"</em>
+    </div>
+    <form onsubmit="event.preventDefault(); const w=document.getElementById('watch-quick-inp'); if(w.value){processSpokenShoppingCommand(w.value, '⌚ Galaxy Watch 6 Gemini'); w.value='';}" style="display:flex;gap:6px;margin-bottom:12px;">
+      <input id="watch-quick-inp" type="text" placeholder="Or dictate via Watch 6 mic..." style="flex:1;background:#18181B;border:1px solid #3F3F46;color:#FFF;padding:8px 12px;border-radius:999px;font-size:0.82rem;">
+      <button type="submit" style="background:#EA580C;color:#FFF;border:none;padding:8px 12px;border-radius:999px;font-weight:700;cursor:pointer;">＋</button>
+    </form>
+    <div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:0.06em;color:#A1A1AA;margin-bottom:6px;text-align:left;padding-left:6px;">
+      Tap item in aisle to check off:
+    </div>
+    <div id="watch-items-list" style="max-height:240px;overflow-y:auto;padding-right:2px;"></div>
+  </div>
+
+  <!-- Top App Header -->
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="brand-group">
+        <div class="brand-icon">🥘</div>
+        <div>
+          <h1 class="brand-title">Meals, Shop &amp; Freezer</h1>
+          <span class="brand-subtitle">2A+2C+1 Lunch • WFH &amp; Late-Return Rules • S25 &amp; Watch 6</span>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <button class="icon-btn voice-trigger-btn voice-mic-btn" id="header-voice-btn" onclick="triggerVoiceCapture('shop')" title="Say 'Add [item] to my shopping list'">
+          <span>🎙️</span>
+          <span>Voice Add</span>
+        </button>
+        <button class="icon-btn" id="header-photo-btn" onclick="openFreezerCaptureModal('photo')" title="Snap Grocery Photo to Freezer (Gemini AI)">
+          <span>📸</span>
+          <span>Freezer Scan</span>
+        </button>
+        <button class="icon-btn" id="header-watch-btn" onclick="toggleWatchMode()" title="Samsung Galaxy Watch 6 Wrist Mode">
+          <span>⌚</span>
+        </button>
+        <button class="icon-btn" id="header-theme-btn" onclick="toggleTheme()" title="Toggle Light/Dark Mode">
+          <span>🌓</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main View Content -->
+  <main class="main-container" id="app-content"></main>
+
+  <!-- Floating Action Mic Button for One-Handed Galaxy S25 Use -->
+  <button class="fab-voice voice-mic-btn" id="fab-voice-btn" onclick="triggerVoiceCapture('shop')" title="Say 'Add [item] to my shopping list'">
+    🎙️
+  </button>
+
+  <!-- Bottom Mobile Navigation Bar -->
+  <nav class="bottom-nav" aria-label="Primary Navigation">
+    <button class="nav-tab active" data-tab="plan" id="nav-tab-plan" onclick="switchTab('plan')">
+      <span class="nav-tab-icon">📅</span>
+      <span>Meal Plan</span>
+    </button>
+    <button class="nav-tab" data-tab="recipes" id="nav-tab-recipes" onclick="switchTab('recipes')">
+      <span class="nav-tab-icon">📖</span>
+      <span>Recipes (141)</span>
+    </button>
+    <button class="nav-tab" data-tab="shop" id="nav-tab-shop" onclick="switchTab('shop')">
+      <span class="nav-tab-icon">🛒</span>
+      <span>Shop List</span>
+      <span class="nav-badge" id="nav-shop-badge">0</span>
+    </button>
+    <button class="nav-tab" data-tab="freezer" id="nav-tab-freezer" onclick="switchTab('freezer')">
+      <span class="nav-tab-icon">❄️</span>
+      <span>Freezer</span>
+      <span class="nav-badge" id="nav-freezer-badge" style="background:#DC2626;">25</span>
+    </button>
+    <button class="nav-tab" data-tab="seasonal" id="nav-tab-seasonal" onclick="switchTab('seasonal')">
+      <span class="nav-tab-icon">🌱</span>
+      <span>Seasonal</span>
+    </button>
+  </nav>
+
+  <!-- Modal 1: Slot / Recipe Picker -->
+  <div class="modal-backdrop" id="slot-picker-modal" onclick="if(event.target===this) closeModal('slot-picker-modal')">
+    <div class="modal-panel">
+      <div class="modal-header">
+        <h3 id="slot-picker-title" style="font-size:1.1rem;">Select Meal</h3>
+        <button class="btn btn-sm" onclick="closeModal('slot-picker-modal')">✕</button>
+      </div>
+      <div id="slot-picker-body"></div>
+    </div>
+  </div>
+
+  <!-- Modal 2: Recipe Add / Edit -->
+  <div class="modal-backdrop" id="recipe-editor-modal" onclick="if(event.target===this) closeModal('recipe-editor-modal')">
+    <div class="modal-panel">
+      <div class="modal-header">
+        <h3 id="recipe-editor-title" style="font-size:1.1rem;">Edit Recipe</h3>
+        <button class="btn btn-sm" onclick="closeModal('recipe-editor-modal')">✕</button>
+      </div>
+      <form onsubmit="saveRecipeFromEditor(event)">
+        <input type="hidden" id="edit-recipe-id">
+        <div class="form-group">
+          <label class="form-label">Recipe Title</label>
+          <input type="text" id="edit-recipe-name" class="form-control" required>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="form-group">
+            <label class="form-label">Dietary Category</label>
+            <select id="edit-recipe-diet" class="form-control">
+              <option value="Vegetarian">Vegetarian</option>
+              <option value="Vegan">Vegan</option>
+              <option value="Meat">Meat</option>
+              <option value="Fish">Fish</option>
+              <option value="Dessert">Dessert</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Active Prep Time (mins)</label>
+            <input type="number" id="edit-recipe-prep" class="form-control" value="20">
+          </div>
+        </div>
+        <div class="form-group" style="display:flex;gap:12px;flex-wrap:wrap;padding:6px 0;">
+          <label style="display:flex;align-items:center;gap:5px;font-size:0.82rem;font-weight:600;cursor:pointer;">
+            <input type="checkbox" id="edit-recipe-wfh"> 🏢 WFH recipes (Tue/Thu Slow Cooker)
+          </label>
+          <label style="display:flex;align-items:center;gap:5px;font-size:0.82rem;font-weight:600;cursor:pointer;">
+            <input type="checkbox" id="edit-recipe-late"> 🌙 Late Return (Mon/Wed/Fri)
+          </label>
+          <label style="display:flex;align-items:center;gap:5px;font-size:0.82rem;font-weight:600;cursor:pointer;">
+            <input type="checkbox" id="edit-recipe-batch"> 🥘 Batch Cook / Freezer
+          </label>
+          <label style="display:flex;align-items:center;gap:5px;font-size:0.82rem;font-weight:600;cursor:pointer;">
+            <input type="checkbox" id="edit-recipe-quick"> ⚡ Quick (≤30m)
+          </label>
+          <label style="display:flex;align-items:center;gap:5px;font-size:0.82rem;font-weight:600;cursor:pointer;">
+            <input type="checkbox" id="edit-recipe-slow"> 🍲 Slow Cooker
+          </label>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Prep-Ahead / Defrost Reminder (for Previous Day)</label>
+          <input type="text" id="edit-recipe-prep-ahead" class="form-control" placeholder="e.g. Defrost salmon & marinate in yoghurt/spices the night before...">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Recipe Link (BBC Good Food, YouTube, etc.)</label>
+          <input type="url" id="edit-recipe-url" class="form-control" placeholder="https://...">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Notes</label>
+          <input type="text" id="edit-recipe-notes" class="form-control">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Ingredients (<code>Item | Base 4p Qty | Aisle</code> — auto-scaled 1.25x for 2A+2C+1 Lunch)</label>
+          <textarea id="edit-recipe-ingredients" class="form-control" rows="5" style="font-family:monospace;font-size:0.82rem;"></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%;">💾 Save Recipe</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 3: Samsung Galaxy S25 & Watch 6 Gemini Voice Integration (Amendment #7) -->
+  <div class="modal-backdrop" id="voice-modal" onclick="if(event.target===this) closeModal('voice-modal')">
+    <div class="modal-panel">
+      <div class="modal-header">
+        <h3 style="font-size:1.1rem;">📱⌚ Samsung Galaxy S25 &amp; Watch 6 Gemini Voice Add</h3>
+        <button class="btn btn-sm" onclick="closeModal('voice-modal')">✕</button>
+      </div>
+      <p id="voice-modal-note" style="font-size:0.84rem;color:var(--text-secondary);margin-bottom:12px;">
+        Say or type <strong>"Add [item] to my shopping list"</strong> (including multiple items separated by commas or <em>"and"</em>). Every item is automatically sorted into your 9 supermarket aisles.
+      </p>
+
+      <form onsubmit="submitVoiceFallbackForm(event)" style="display:flex;gap:8px;margin-bottom:14px;">
+        <input type="text" id="voice-text-fallback" class="form-control" placeholder="e.g. 'Add blue milk, 2 avocados and cumin refill to my shopping list'">
+        <button type="submit" class="btn btn-primary">Add</button>
+      </form>
+
+      <div style="margin-bottom:14px;">
+        <div class="form-label">⚡ Test S25 / Watch 6 Gemini Voice Phrases (1-Tap):</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;">
+          <button type="button" class="filter-chip" onclick="processSpokenShoppingCommand('Hey Google, add blue milk, 2 avocados and night time nappies to my shopping list'); closeModal('voice-modal');">
+            "Hey Google, add blue milk, 2 avocados and night time nappies to my shopping list"
+          </button>
+          <button type="button" class="filter-chip" onclick="processSpokenShoppingCommand('Add halloumi, shelled hemp seeds and cacao powder to my shopping list'); closeModal('voice-modal');">
+            "Add halloumi, shelled hemp seeds and cacao powder to my shopping list"
+          </button>
+        </div>
+      </div>
+
+      <!-- Google Keep / Tasks Bridge for Native S25 & Watch 6 Gemini Assistant -->
+      <div style="background:var(--bg-subtle);padding:12px;border-radius:10px;font-size:0.8rem;color:var(--text-secondary);line-height:1.45;">
+        <div style="font-weight:700;color:var(--text-primary);margin-bottom:6px;">
+          🔗 Connect Native S25 / Watch 6 Gemini ("Hey Google, add X to my shopping list")
+        </div>
+        <p style="margin-bottom:8px;">
+          When you hold the side button on your <strong>Galaxy S25</strong> or <strong>Galaxy Watch 6</strong> and tell Gemini <em>"Add [item] to my shopping list"</em>, Gemini saves that item to <strong>Google Tasks / Google Keep</strong>. You can sync those items straight into this app in two ways:
+        </p>
+        <ol style="padding-left:18px;display:flex;flex-direction:column;gap:6px;margin-bottom:10px;">
+          <li>
+            <strong>Samsung Modes &amp; Routines / Watch Tile Direct Launch:</strong> Set a Galaxy Watch 6 Tile or S25 Routine to open this app with <code>?voice=1</code> (starts listening immediately) or share your Google Keep list directly to this installed PWA.
+          </li>
+          <li>
+            <strong>1-Tap Cloud Sync (Google Apps Script Bridge):</strong> Paste a free Google Apps Script Web App URL below to pull items directly from your Google Tasks "Shopping List" whenever you tap Sync:
+          </li>
+        </ol>
+        <div style="display:flex;gap:6px;">
+          <input type="url" id="gemini-webhook-input" class="form-control" style="font-size:0.78rem;padding:6px 10px;" placeholder="https://script.google.com/macros/s/.../exec" onchange="saveGeminiWebhookUrl(this.value)">
+          <button type="button" class="btn btn-sm btn-primary" onclick="syncFromGeminiWebhook()">🔄 Sync Now</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 4: Smart Freezer Photo & Voice Capture (Amendment #11) -->
+  <div class="modal-backdrop" id="freezer-capture-modal" onclick="if(event.target===this) closeModal('freezer-capture-modal')">
+    <div class="modal-panel">
+      <div class="modal-header">
+        <h3 style="font-size:1.1rem;">📸❄️ Fast Freezer Capture (Photo, Voice &amp; Receipt)</h3>
+        <button class="btn btn-sm" onclick="closeModal('freezer-capture-modal')">✕</button>
+      </div>
+
+      <!-- Method 1: Camera Photo / Receipt Scanner with Gemini Vision -->
+      <div style="background:var(--bg-subtle);padding:12px;border-radius:10px;margin-bottom:12px;">
+        <div style="font-weight:700;font-size:0.9rem;margin-bottom:4px;">📸 Method 1: Snap Photo at the Shop (Gemini Vision AI)</div>
+        <p style="font-size:0.78rem;color:var(--text-secondary);margin-bottom:10px;">
+          Take a photo of your groceries at the checkout or your supermarket receipt. Gemini identifies all freezable items, assigns Kitchen vs. Garage freezer, and starts their 3–4 week rotation timer.
+        </p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+          <label class="btn btn-primary" style="cursor:pointer;">
+            📷 Take Photo / Upload Image
+            <input type="file" accept="image/*" capture="environment" style="display:none;" onchange="handleFreezerPhotoUpload(event)">
+          </label>
+          <button type="button" class="btn" onclick="runSimulatedPhotoScan()">✨ Run Instant Demo Photo Scan</button>
+        </div>
+        <details style="font-size:0.75rem;color:var(--text-muted);">
+          <summary style="cursor:pointer;">Optional: Enter Gemini API Key for live on-device camera vision</summary>
+          <input type="password" id="gemini-api-key-input" class="form-control" style="margin-top:6px;padding:6px 10px;font-size:0.78rem;" placeholder="AIzaSy... (Google AI Studio API Key)" onchange="saveGeminiApiKey(this.value)">
+        </details>
+        <div id="photo-scan-status" style="font-size:0.82rem;margin-top:8px;"></div>
+        <div id="photo-scan-results"></div>
+      </div>
+
+      <!-- Method 2: Freezer Door Multi-Item Voice Dump -->
+      <div style="background:var(--bg-subtle);padding:12px;border-radius:10px;margin-bottom:12px;">
+        <div style="font-weight:700;font-size:0.9rem;margin-bottom:4px;">🎙️ Method 2: "Freezer Door" Voice / Dictation Dump</div>
+        <p style="font-size:0.78rem;color:var(--text-secondary);margin-bottom:8px;">
+          While unpacking bags at the Kitchen or Garage freezer, speak or dictate all items at once:
+        </p>
+        <form onsubmit="event.preventDefault(); const inp=document.getElementById('fz-voice-dump-inp'); if(inp.value){processFreezerVoiceDump(inp.value); inp.value=''; closeModal('freezer-capture-modal');}" style="display:flex;gap:6px;">
+          <input type="text" id="fz-voice-dump-inp" class="form-control" placeholder="e.g. 'Garage freezer: 2 packs chicken breasts, 1 beef joint, 2 bags peas'">
+          <button type="button" class="btn voice-mic-btn" onclick="triggerVoiceCapture('freezer')">🎙️</button>
+          <button type="submit" class="btn btn-primary">Add All</button>
+        </form>
+      </div>
+
+      <!-- Additional Suggestions requested in Amendment #11 -->
+      <div style="font-size:0.78rem;color:var(--text-secondary);padding:10px;border:1px solid var(--border-color);border-radius:10px;">
+        <div style="font-weight:700;color:var(--text-primary);margin-bottom:4px;">💡 3 More Time-Saving Freezer Ideas (Amendment #11):</div>
+        <ul style="padding-left:18px;display:flex;flex-direction:column;gap:4px;">
+          <li><strong>🛒 1-Tap "Move Checked Shopping List Items → Freezer":</strong> Already built into your Shop &amp; Freezer tabs! Check off meat/fish/frozen veg as you shop, then tap one button to send them all to the Freezer.</li>
+          <li><strong>🏷️ Stick a £1 NFC Sticker on the Garage Freezer Door:</strong> Program an NFC tag on your Garage Freezer door with your phone's URL <code>?voice=1</code> — tapping your Galaxy S25 against the freezer door immediately opens the voice listener!</li>
+          <li><strong>📧 Online Supermarket Receipt Copy-Paste:</strong> If you do an online shop (Tesco/Sainsbury's/Ocado), paste the email confirmation into the Voice Dump box above and it will extract the items automatically.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <script src="./data.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>

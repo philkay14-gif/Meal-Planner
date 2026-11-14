@@ -1,0 +1,51 @@
+{
+  "name": "Meals, Shopping List & Freezer",
+  "short_name": "MealPlanner",
+  "description": "Mobile-first Meal Planner, 100-Recipe Directory, Smart Shopping List with Voice Commands & Samsung Galaxy Watch Mode, and Freezer Inventory.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#FAF7F2",
+  "theme_color": "#C2410C",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='42' fill='%23C2410C'/%3E%3Ctext x='96' y='132' font-size='108' text-anchor='middle'%3E🥘%3C/text%3E%3C/svg%3E",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='112' fill='%23C2410C'/%3E%3Ctext x='256' y='350' font-size='280' text-anchor='middle'%3E🥘%3C/text%3E%3C/svg%3E",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "🎙️ Voice Add to Shopping List",
+      "short_name": "Voice Add",
+      "description": "Immediately listen and add spoken items to your shopping list",
+      "url": "./index.html?voice=1"
+    },
+    {
+      "name": "⌚ Galaxy Watch Mode",
+      "short_name": "Watch UI",
+      "description": "Open compact wrist interface for Samsung Galaxy Watch",
+      "url": "./index.html?watch=1"
+    },
+    {
+      "name": "🛒 Open Shopping List",
+      "short_name": "Shopping List",
+      "url": "./index.html#shop"
+    }
+  ],
+  "share_target": {
+    "action": "./index.html",
+    "method": "GET",
+    "params": {
+      "title": "title",
+      "text": "add"
+    }
+  }
+}
